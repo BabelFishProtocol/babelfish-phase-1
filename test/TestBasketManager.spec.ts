@@ -102,4 +102,73 @@ contract("BasketManager", async (accounts) => {
             });
         });
     });
+
+    describe("convertBassetToMassetQuantity", async () => {
+        let masset;
+        let mockToken1, mockToken2, mockToken3, mockToken4;
+        let bassets, factors; let bridges; let basketManager; let factor; let amount;
+        before(async () => {
+            masset = await Masset.new();
+            mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, 1);
+            mockToken2 = await MockERC20.new("", "", 18, sa.dummy1, 1);
+            mockToken3 = await MockERC20.new("", "", 18, sa.dummy1, 1);
+            mockToken4 = await MockERC20.new("", "", 18, sa.dummy1, 1);
+            bassets = [mockToken1.address, mockToken2.address, mockToken3.address];
+            bridges = [ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS];
+            factors = [1, 1, 1];
+            basketManager = await BasketManager.new(bassets, factors, bridges);
+        });
+
+        context("should fail", async () => {
+            it("when Basset is invalid", async () => {
+                //mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, 10000, { from: sa.dummy1 });
+                //mockToken1 = await MockERC20.new("", "", 18, sa.dummy1, tokens(100), { from: owner });
+                basketManager = await BasketManager.new(bassets, factors, bridges);
+                await expectRevert(
+                    basketManager.convertBassetToMassetQuantity(mockToken4.address, 100),
+                    "VM Exception while processing transaction: reverted with reason string 'invalid basset'"
+                );
+            });
+        });
+
+        context("should succeed", async () => {
+            it("works fine with factor equal 1", async () => {
+                amount = 1000;
+                basketManager = await BasketManager.new(bassets, factors, bridges);
+                const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, amount);
+                const expectedMassetAmount = amount;
+                expect(massetAmount.toString()).to.equal(expectedMassetAmount.toString());
+            });
+
+            it("works fine with positive factor", async () => {
+                amount = 1000;
+                factor = 10;
+                factors = [ factor, factor, factor ];
+                basketManager = await BasketManager.new(bassets, factors, bridges);
+                const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, amount);
+                const expectedMassetAmount = amount/factor;
+                expect(massetAmount.toString()).to.equal(expectedMassetAmount.toString());
+            });
+
+            it("works fine when amount don't divide evenly", async () => {
+                amount = 100;
+                factor = 10;
+                factors = [ factor, factor, factor ];
+                basketManager = await BasketManager.new(bassets, factors, bridges);
+                const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, 15);
+                const expectedMassetAmount = "1";
+                expect(massetAmount.toString()).to.equal(expectedMassetAmount.toString());
+            });
+
+            it("works fine with negative factor", async () => {
+                amount = 1000;
+                factor = -10;
+                factors = [ factor, factor, factor ];
+                basketManager = await BasketManager.new(bassets, factors, bridges);
+                const massetAmount = await basketManager.convertBassetToMassetQuantity(mockToken1.address, amount);
+                const expectedMassetAmount = amount * (-1) * (factor);
+                expect(massetAmount.toString()).to.equal(expectedMassetAmount.toString());
+            });
+        });
+    });
 });

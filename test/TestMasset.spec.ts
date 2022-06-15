@@ -21,10 +21,11 @@ const { expect } = envSetup.configure();
 
 const ThresholdProxyAdmin = artifacts.require("ThresholdProxyAdmin");
 const BasketManager = artifacts.require("BasketManager");
-const bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
+let bridges = [ZERO_ADDRESS, ZERO_ADDRESS];
 const Masset = artifacts.require("Masset");
 const Token = artifacts.require("Token");
 const MockERC20 = artifacts.require("MockERC20");
+const MockBridge = artifacts.require("MockBridge");
 
 let standardAccounts;
 
@@ -43,26 +44,46 @@ contract("Masset", async (accounts) => {
         });
         context("should succeed", async () => {
             it("when given a valid basket manager", async () => {
-                await masset.initialize(basketManagerObj.basketManager.address, token.address, false);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
             });
         });
         context("should fail", async () => {
             it("when basket manager missing", async () => {
                 await expectRevert(
-                    masset.initialize(ZERO_ADDRESS, token.address, false),
+                    masset.initialize(ZERO_ADDRESS, token.address, false, ZERO_ADDRESS),
                     "VM Exception while processing transaction: reverted with reason string 'invalid basket manager'",
                 );
             });
             it("when token missing", async () => {
                 await expectRevert(
-                    masset.initialize(basketManagerObj.basketManager.address, ZERO_ADDRESS, false),
+                    masset.initialize(
+                        basketManagerObj.basketManager.address,
+                        ZERO_ADDRESS,
+                        false,
+                        ZERO_ADDRESS,
+                    ),
                     "VM Exception while processing transaction: reverted with reason string 'invalid token'",
                 );
             });
             it("when already initialized", async () => {
-                await masset.initialize(basketManagerObj.basketManager.address, token.address, false);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
                 await expectRevert(
-                    masset.initialize(basketManagerObj.basketManager.address, token.address, false),
+                    masset.initialize(
+                        basketManagerObj.basketManager.address,
+                        token.address,
+                        false,
+                        ZERO_ADDRESS,
+                    ),
                     "VM Exception while processing transaction: reverted with reason string 'already initialized'",
                 );
             });
@@ -77,24 +98,29 @@ contract("Masset", async (accounts) => {
             masset = await Masset.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await masset.initialize(basketManagerObj.basketManager.address, token.address, false);
+            await masset.initialize(
+                basketManagerObj.basketManager.address,
+                token.address,
+                false,
+                ZERO_ADDRESS,
+            );
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = '1000000000000000000';
+                const sum = "1000000000000000000";
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
                 const tx = await masset.mint(basketManagerObj.mockToken1.address, sum, {
                     from: standardAccounts.dummy1,
                 });
-                await expectEvent(tx.receipt, 'Minted', {
+                await expectEvent(tx.receipt, "Minted", {
                     minter: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy1,
                     massetQuantity: sum,
                     bAsset: basketManagerObj.mockToken1.address,
-                    bassetQuantity: sum
+                    bassetQuantity: sum,
                 });
                 const balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance.toString()).to.equal(`${sum}`);
@@ -128,11 +154,16 @@ contract("Masset", async (accounts) => {
             masset = await Masset.new();
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
             token = await createToken(masset);
-            await masset.initialize(basketManagerObj.basketManager.address, token.address, false);
+            await masset.initialize(
+                basketManagerObj.basketManager.address,
+                token.address,
+                false,
+                ZERO_ADDRESS,
+            );
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = '100000000000000000';
+                const sum = "100000000000000000";
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
@@ -142,12 +173,12 @@ contract("Masset", async (accounts) => {
                     standardAccounts.dummy4,
                     { from: standardAccounts.dummy1 },
                 );
-                await expectEvent(tx.receipt, 'Minted', {
+                await expectEvent(tx.receipt, "Minted", {
                     minter: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy4,
                     massetQuantity: sum,
                     bAsset: basketManagerObj.mockToken1.address,
-                    bassetQuantity: sum
+                    bassetQuantity: sum,
                 });
                 const balance = await token.balanceOf(standardAccounts.dummy4);
                 expect(balance.toString()).to.equal(`${sum}`);
@@ -163,12 +194,17 @@ contract("Masset", async (accounts) => {
             masset = await Masset.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
-            await masset.initialize(basketManagerObj.basketManager.address, token. address, false);
+            await masset.initialize(
+                basketManagerObj.basketManager.address,
+                token.address,
+                false,
+                ZERO_ADDRESS,
+            );
             mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
         });
         context("should succeed", () => {
             it("if all params are valid", async () => {
-                const sum = '100000000000000000';
+                const sum = "100000000000000000";
                 await basketManagerObj.mockToken1.approve(masset.address, sum, {
                     from: standardAccounts.dummy1,
                 });
@@ -182,12 +218,12 @@ contract("Masset", async (accounts) => {
                 const tx = await masset.redeem(basketManagerObj.mockToken1.address, sum, {
                     from: standardAccounts.dummy1,
                 });
-                await expectEvent(tx.receipt, 'Redeemed', {
+                await expectEvent(tx.receipt, "Redeemed", {
                     redeemer: standardAccounts.dummy1,
                     recipient: standardAccounts.dummy1,
                     massetQuantity: sum,
                     bAsset: basketManagerObj.mockToken1.address,
-                    bassetQuantity: sum
+                    bassetQuantity: sum,
                 });
                 balance = await token.balanceOf(standardAccounts.dummy1);
                 expect(balance.toString()).to.equal(`0`);
@@ -224,7 +260,12 @@ contract("Masset", async (accounts) => {
             masset = await Masset.new();
             token = await createToken(masset);
             basketManagerObj = await createBasketManager(masset, [20, 12], [100, -1000000]);
-            await masset.initialize(basketManagerObj.basketManager.address, token.address, false);
+            await masset.initialize(
+                basketManagerObj.basketManager.address,
+                token.address,
+                false,
+                ZERO_ADDRESS,
+            );
         });
         it("works both ways", async () => {
             expect(await getBalance(basketManagerObj.mockToken1, standardAccounts.dummy1)).to.equal(
@@ -273,6 +314,315 @@ contract("Masset", async (accounts) => {
             );
         });
     });
+
+    describe("redeemToBridge", async () => {
+        let masset;
+        let basketManagerObj, token;
+        let mockTokenDummy;
+        const sum = "1000000000000000000";
+        context("should fail", () => {
+            it("when bridge is not valid", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+
+                await basketManagerObj.mockToken1.approve(masset.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await token.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+
+                await expectRevert(
+                    masset.methods["redeemToBridge(address,uint256,address,bytes)"](
+                        basketManagerObj.mockToken1.address,
+                        sum,
+                        standardAccounts.dummy2,
+                        Buffer.from(""),
+                        { from: standardAccounts.dummy1 },
+                    ),
+                    "VM Exception while processing transaction: reverted with reason string 'invalid bridge'",
+                );
+            });
+        });
+
+        context("should succeed", () => {
+            it("if all params are valid", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address];
+                basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+
+                await basketManagerObj.mockToken1.approve(masset.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await token.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+
+                await masset.methods[
+                    "redeemToBridge(address,uint256,address,bytes)"
+                ](
+                    basketManagerObj.mockToken1.address,
+                    sum,
+                    standardAccounts.dummy2,
+                    Buffer.from(""),
+                    { from: standardAccounts.dummy1 },
+                );
+
+                const bridgeBalance = await getBalance(
+                    basketManagerObj.mockToken1,
+                    mockBridge1.address,
+                );
+                expect(bridgeBalance).to.bignumber.eq(sum, "should transfer bassets to bridge");
+            });
+        });
+    });
+
+    describe("redeemToBridgeWithApproval", async () => {
+        let masset;
+        let basketManagerObj, token;
+        let mockTokenDummy;
+        const sum = "1000000000000000000";
+        context("should fail", () => {
+            it("if invoked directly", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address];
+                basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+
+                await basketManagerObj.mockToken1.approve(masset.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await token.approve(masset.address, sum, { from: standardAccounts.dummy1 });
+
+                await expectRevert(
+                    masset.redeemToBridgeWithApproval(
+                        standardAccounts.dummy1,
+                        sum,
+                        basketManagerObj.mockToken1.address,
+                        standardAccounts.dummy2,
+                        Buffer.from(""),
+                        { from: standardAccounts.dummy1 },
+                    ),
+                    "unauthorized",
+                );
+            });
+
+            it("if pass wrong method in data", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address];
+                basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+
+                await basketManagerObj.mockToken1.approve(masset.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+
+                let contract = new web3.eth.Contract(masset.abi, masset.address);
+                let data = contract.methods
+                    .redeemToBridge(
+                        basketManagerObj.mockToken1.address,
+                        sum,
+                        standardAccounts.dummy2,
+                        Buffer.from(""),
+                    )
+                    .encodeABI();
+
+                await expectRevert(
+                    token.approveAndCall(masset.address, sum, data, {
+                        from: standardAccounts.dummy1,
+                    }),
+                    "method is not allowed",
+                );
+            });
+        });
+
+        context("should succeed", () => {
+            it("if all params are valid", async () => {
+                masset = await Masset.new();
+                token = await createToken(masset);
+                let massetAddr = masset.address;
+                let mockBridge1 = await MockBridge.new();
+                bridges = [mockBridge1.address, mockBridge1.address];
+                basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
+                await masset.initialize(
+                    basketManagerObj.basketManager.address,
+                    token.address,
+                    false,
+                    ZERO_ADDRESS,
+                );
+                mockTokenDummy = await MockERC20.new("", "", 12, standardAccounts.dummy1, 1);
+
+                await basketManagerObj.mockToken1.approve(masset.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+                await masset.mint(basketManagerObj.mockToken1.address, sum, {
+                    from: standardAccounts.dummy1,
+                });
+
+                let contract = new web3.eth.Contract(masset.abi, masset.address);
+                let data = contract.methods
+                    .redeemToBridgeWithApproval(
+                        standardAccounts.dummy1,
+                        sum,
+                        basketManagerObj.mockToken1.address,
+                        standardAccounts.dummy2,
+                        Buffer.from(""),
+                    )
+                    .encodeABI();
+
+                await token.approveAndCall(masset.address, sum, data, {
+                    from: standardAccounts.dummy1,
+                });
+                const bridgeBalance = await getBalance(
+                    basketManagerObj.mockToken1,
+                    mockBridge1.address,
+                );
+                expect(bridgeBalance).to.bignumber.eq(sum, "should transfer bassets to bridge");
+            });
+        });
+    });
+
+    describe("_msgSender", async () => {
+        let masset;
+        let basketManagerObj, token;
+        let data: string;
+
+        beforeEach(async () => {
+            masset = await Masset.new();
+            token = await createToken(masset);
+            basketManagerObj = await createBasketManager(masset, [18, 18], [1, 1]);
+            await masset.initialize(
+                basketManagerObj.basketManager.address,
+                token.address,
+                false,
+                standardAccounts.forwarder,
+            );
+
+            // Call data for a transfer transaction for `amount` to `receiver`
+            data = web3.eth.abi.encodeFunctionCall(
+                {
+                    name: "setBasketManager",
+                    type: "function",
+                    inputs: [
+                        {
+                            internalType: "address",
+                            name: "_basketManagerAddress",
+                            type: "address",
+                        },
+                    ],
+                },
+                [token.address],
+            );
+        });
+
+        context("should succeed", async () => {
+            it("when from address is appended to data and sender is trusted forwarder", async () => {
+                // Append the address of `user` so the contract will consider it is the sender
+                const dataWithAddress = data + standardAccounts.default.substr(2);
+
+                // Transaction object with `forwarder` as sender
+                const rawTransaction = {
+                    from: standardAccounts.forwarder,
+                    to: masset.address,
+                    data: dataWithAddress,
+                };
+
+                const initialBasketManager = await masset.getBasketManager();
+                if (initialBasketManager === token.address) throw new Error("Test invalidated");
+
+                await web3.eth.sendTransaction(rawTransaction);
+                const finalBasketManager = await masset.getBasketManager();
+
+                assert(finalBasketManager === token.address);
+            });
+
+            it("when no address appended to data and sender is not trusted forwarder", async () => {
+                // Transaction object with `user` as sender
+                const rawTransaction = {
+                    from: standardAccounts.default,
+                    to: masset.address,
+                    data,
+                };
+
+                const initialBasketManager = await masset.getBasketManager();
+                if (initialBasketManager === token.address) throw new Error("Test invalidated");
+
+                await web3.eth.sendTransaction(rawTransaction);
+                const finalBasketManager = await masset.getBasketManager();
+
+                assert(finalBasketManager === token.address);
+            });
+        });
+
+        context("should fail", async () => {
+            it("when from address is appended to data and sender is not trusted forwarder", async () => {
+                // Append the address of `user` so the contract will consider it is the sender
+                const dataWithAddress = data + standardAccounts.default.substr(2);
+
+                // Transaction object with `receiver` as sender
+                const rawTransaction = {
+                    from: standardAccounts.dummy1,
+                    to: masset.address,
+                    data: dataWithAddress,
+                };
+                const initialBasketManager = await masset.getBasketManager();
+                if (initialBasketManager === token.address) throw new Error("Test invalidated");
+
+                await expectRevert(
+                    web3.eth.sendTransaction(rawTransaction),
+                    "InitializableOwnable: caller is not the owner",
+                );
+
+                const finalBasketManager = await masset.getBasketManager();
+
+                assert(finalBasketManager === initialBasketManager);
+            });
+        });
+    });
 });
 
 async function createBasketManager(
@@ -293,8 +643,9 @@ async function createBasketManager(
 }
 
 async function createToken(masset: MassetInstance): Promise<any> {
-    const token = await Token.new();
-    await token.initialize('Mock1', 'MK1', 18);
+    // token set to any because of typechain bug where initialize method type is not correctly created
+    const token: any = await Token.new();
+    await token.initialize("Mock1", "MK1", 18, ZERO_ADDRESS);
     token.transferOwnership(masset.address);
     return token;
 }

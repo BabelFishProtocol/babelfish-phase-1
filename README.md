@@ -7,4 +7,3 @@
 ## Create types/generated/*.d.ts 
 > yarn hardhat compile --force
 
-

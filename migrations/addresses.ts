@@ -68,5 +68,31 @@ export default {
             '0x0000000000000000000000000000000000000000',
         ],
         factors: [1]
+    },
+    btestnet: {
+            bassets: [
+                // RSK->BSC
+                '0xc41d41cb7a31c80662ac2d8ab7a7e5f5841eebc3', // bRBTC
+
+            ],
+            bridges: [
+                // RSK -> BSC
+                '0x862e8aff917319594cc7faaae5350d21196c086f',
+
+            ],
+            factors: [1]
+    },
+    bmainnet: {
+            bassets: [
+                // RSK->BSC
+                '', // bRBTC
+
+            ],
+            bridges: [
+                // RSK -> BSC
+                '0xdfc7127593c8af1a17146893f10e08528f4c2aa7',
+
+            ],
+        factors: [1]
     }
 };

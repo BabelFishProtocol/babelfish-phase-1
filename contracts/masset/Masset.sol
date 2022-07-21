@@ -29,7 +29,8 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address indexed recipient,
         uint256 massetQuantity,
         address bAsset,
-        uint256 bassetQuantity);
+        uint256 bassetQuantity,
+        bytes userData);
 
     event onTokensReceivedCalled(
         address operator,
@@ -172,7 +173,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _bAsset,
         uint256 _massetQuantity
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, msg.sender, false);
+        return _redeemTo(_bAsset, _massetQuantity, msg.sender, bytes(""), false);
     }
 
     /**
@@ -188,7 +189,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         uint256 _massetQuantity,
         address _recipient
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_bAsset, _massetQuantity, _recipient, false);
+        return _redeemTo(_bAsset, _massetQuantity, _recipient, bytes(""), false);
     }
 
     /***************************************
@@ -199,6 +200,7 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
         address _basset,
         uint256 _massetQuantity,
         address _recipient,
+        bytes memory userData,
         bool bridgeFlag
     ) internal returns (uint256 massetRedeemed) {
         require(_recipient != address(0), "must be a valid recipient");
@@ -214,14 +216,14 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
             require(bridgeAddress != address(0), "invalid bridge");
             IERC20(_basset).approve(bridgeAddress, bassetQuantity);
             require(
-                IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, bytes("")),
+                IBridge(bridgeAddress).receiveTokensAt(_basset, bassetQuantity, _recipient, userData),
                 "call to bridge failed");
         } else {
             IERC20(_basset).transfer(_recipient, bassetQuantity);
         }
 
         token.burn(msg.sender, _massetQuantity);
-        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity);
+        emit Redeemed(msg.sender, _recipient, _massetQuantity, _basset, bassetQuantity, userData);
 
         return _massetQuantity;
     }
@@ -241,9 +243,10 @@ contract Masset is IERC777Recipient, InitializableOwnable, InitializableReentran
     function redeemToBridge(
         address _basset,
         uint256 _massetQuantity,
-        address _recipient
+        address _recipient,
+        bytes calldata _userData
     ) external nonReentrant returns (uint256 massetRedeemed) {
-        return _redeemTo(_basset, _massetQuantity, _recipient, true);
+        return _redeemTo(_basset, _massetQuantity, _recipient, _userData, true);
     }
 
     function _decodeAddress(bytes memory data) private pure returns (address) {

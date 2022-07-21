@@ -84,15 +84,16 @@ export default {
     },
     bmainnet: {
             bassets: [
-                // RSK->BSC
-                '', // bRBTC
+                '0x68e75416a99f61a8ef3186b3bee41dbf2a3fd4e8', // brBTC taken from https://bscscan.com/address/0x152E8D16f7fF6F9BDA5d989CC2daA514f427a9BB#code
+                '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', // BTCB
 
             ],
             bridges: [
                 // RSK -> BSC
                 '0xdfc7127593c8af1a17146893f10e08528f4c2aa7',
+                '0x0000000000000000000000000000000000000000',
 
             ],
-        factors: [1]
+        factors: [1, 1]
     }
 };
